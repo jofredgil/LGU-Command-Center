@@ -288,8 +288,8 @@
                         if (data.notes) {
                             isSilent = data.notes.includes("SILENT EMERGENCY");
                             
-                            // MAGIC EXTRACTOR: Pulls the 11-digit mobile number right out of the text block
-                            let mobileMatch = data.notes.match(/CONTACT:\s*([^\\]+)/);
+                            // MAGIC EXTRACTOR: Pulls ONLY the mobile number up to the first newline
+                            let mobileMatch = data.notes.match(/CONTACT:\s*(.*?)(?:\\n|\n|<br>|$)/i);
                             if (mobileMatch && mobileMatch[1]) {
                                 extractedMobile = mobileMatch[1].trim();
                             }
