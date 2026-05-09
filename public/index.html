@@ -293,13 +293,14 @@
                             if (mobileMatch && mobileMatch[1]) {
                                 extractedMobile = mobileMatch[1].trim();
                             }
-                            
+
                             // Format the raw data strings from Java \\n into HTML line breaks <br>
                             let formattedData = data.notes.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
                             
-                            // Remove the small contact line since we are about to make it massive
+                            // Remove the small contact line from the gray box since we are displaying it massively above
                             formattedData = formattedData.replace(/CONTACT:.*?<br>/i, '');
                             
+                            // RESTORED: The Gray Terminal Box for the remaining triage data
                             cadDataHtml = `
                                 <div class="mt-3 bg-gray-800 border border-gray-600 rounded p-3 text-[11px] font-mono text-gray-300 leading-relaxed overflow-y-auto max-h-48 shadow-inner">
                                     ${formattedData}
@@ -345,8 +346,7 @@
                                 <p class="text-sm font-semibold text-gray-200">Caller: <span class="text-[#83D2ED]">${data.citizen_id}</span></p>
                                 
                                 ${mobileDisplayBlock} <!-- NEW: BIG NUMBER -->
-
-                                ${cadDataHtml} <!-- THE RICH DATA TERMINAL BOX -->
+                                ${cadDataHtml} <!-- RESTORED: THE RICH DATA TERMINAL BOX -->
                                 ${imageHtmlBlock} 
 
                                 <div class="flex flex-col mt-4 border-t border-gray-700 pt-3">
