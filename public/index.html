@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #111827; }
         ::-webkit-scrollbar-thumb { background: #1B93BB; border-radius: 3px; }
@@ -18,20 +17,15 @@
             50% { border-color: #ef4444; } 
             100% { border-color: #374151; }
         }
-        
-        .fade-out {
-            opacity: 0;
-            transition: opacity 0.5s ease-out;
-        }
-
-        /* Dash animation for the tracking line */
+        .fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
         .dash-line { animation: dash 20s linear infinite; }
         @keyframes dash { to { stroke-dashoffset: -1000; } }
     </style>
 </head>
 <body class="bg-gray-900 text-white h-screen w-screen flex flex-col font-sans overflow-hidden">
 
-    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 z-50 flex items-center justify-center flex-col">
+    <!-- LOGIN OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 z-[300] flex items-center justify-center flex-col">
         <h1 class="text-3xl font-extrabold tracking-widest text-white mb-6">MDRRMO <span class="text-[#BB441B]">HQ LOGIN</span></h1>
         <div class="bg-[#111827] p-8 rounded-lg border-2 border-[#1B93BB] shadow-2xl text-center w-96">
             <p class="text-gray-400 text-sm mb-6 tracking-wide">AUTHORIZED DISPATCHERS ONLY</p>
@@ -41,22 +35,66 @@
         </div>
     </div>
 
-    <div id="imageModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex items-center justify-center p-4 cursor-zoom-out transition-opacity duration-300" onclick="closeImageModal()">
+    <!-- CUSTOM CONFIRMATION MODAL -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/90 z-[200] hidden flex items-center justify-center transition-opacity">
+        <div class="bg-[#111827] border-2 border-red-600 p-8 rounded-lg text-center max-w-sm shadow-2xl">
+            <h2 id="confirmTitle" class="text-2xl font-black text-white mb-2 tracking-wider">CONFIRM ACTION</h2>
+            <p id="confirmMessage" class="text-gray-400 mb-8 text-sm leading-relaxed">Are you sure you want to proceed?</p>
+            <div class="flex gap-4">
+                <button onclick="closeConfirm()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded font-bold tracking-widest transition-colors">CANCEL</button>
+                <button id="confirmBtn" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded font-bold tracking-widest transition-colors shadow-lg">PROCEED</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTORY REPORT MODAL -->
+    <div id="reportModal" class="fixed inset-0 bg-black/90 z-[150] hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-[#1B93BB] rounded-lg shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-[#111827] rounded-t-lg">
+                <h2 class="text-xl font-black tracking-widest text-[#83D2ED]">INCIDENT REPORT</h2>
+                <button onclick="closeReportModal()" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4" id="reportModalContent">
+                <!-- Dynamically Injected Report Data -->
+            </div>
+            <div class="p-4 border-t border-gray-700 bg-[#111827] rounded-b-lg flex justify-end">
+                <button onclick="closeReportModal()" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded text-sm font-bold tracking-widest">CLOSE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- USER PROFILE MODAL -->
+    <div id="userModal" class="fixed inset-0 bg-black/90 z-[150] hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-[#1B93BB] rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div class="p-4 border-b border-gray-700 flex justify-between items-center bg-[#111827] rounded-t-lg">
+                <h2 class="text-xl font-black tracking-widest text-[#83D2ED]">CITIZEN PROFILE</h2>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-3" id="userModalContent">
+                <!-- Dynamically Injected User Data -->
+            </div>
+            <div class="p-4 border-t border-gray-700 bg-[#111827] rounded-b-lg flex justify-between" id="userModalActions">
+                <!-- Buttons injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGE EXPANSION MODAL -->
+    <div id="imageModal" class="fixed inset-0 bg-black/90 z-[100] hidden flex items-center justify-center p-4 cursor-zoom-out" onclick="closeImageModal()">
         <img id="modalImage" src="" class="max-w-full max-h-full rounded-lg shadow-2xl cursor-default" onclick="event.stopPropagation()">
-        <button class="absolute top-6 right-6 text-white hover:text-red-500 text-4xl font-bold cursor-pointer transition-colors" onclick="closeImageModal()">&times;</button>
+        <button class="absolute top-6 right-6 text-white hover:text-red-500 text-4xl font-bold cursor-pointer" onclick="closeImageModal()">&times;</button>
     </div>
 
     <audio id="alertSound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
+    <!-- MAIN HEADER -->
     <header class="bg-[#111827] p-4 shadow-lg flex justify-between items-center border-b-[3px] border-[#1B93BB] z-20">
         <div class="flex items-center gap-4">
             <div class="w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
             <h1 class="text-2xl font-extrabold tracking-widest text-white">
                 MDRRMO <span class="text-[#BB441B]">COMMAND CENTER</span>
             </h1>
-            <div id="connection-status" class="text-sm font-bold ml-4 tracking-wide text-gray-500 transition-opacity duration-500">
-                Connecting...
-            </div>
+            <div id="connection-status" class="text-sm font-bold ml-4 tracking-wide text-gray-500 transition-opacity duration-500">Connecting...</div>
         </div>
         <div class="flex items-center gap-4">
             <div class="text-[#83D2ED] text-sm font-semibold tracking-wider">SYSTEM ACTIVE</div>
@@ -71,17 +109,10 @@
         </div>
         
         <div class="w-[450px] bg-gray-900 border-l border-[#1B93BB] flex flex-col z-10 shadow-2xl">
-            
             <div class="flex bg-[#111827] border-b border-[#1B93BB]">
-                <button id="btn-tab-live" onclick="switchTab('tab-live')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-[#E36940] border-b-2 border-[#E36940] hover:bg-gray-800 transition-colors">
-                    LIVE FEED
-                </button>
-                <button id="btn-tab-history" onclick="switchTab('tab-history')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-gray-400 border-b-2 border-transparent hover:bg-gray-800 transition-colors">
-                    HISTORY
-                </button>
-                <button id="btn-tab-users" onclick="switchTab('tab-users')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-gray-400 border-b-2 border-transparent hover:bg-gray-800 transition-colors">
-                    USERS
-                </button>
+                <button id="btn-tab-live" onclick="switchTab('tab-live')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-[#E36940] border-b-2 border-[#E36940] hover:bg-gray-800 transition-colors">LIVE FEED</button>
+                <button id="btn-tab-history" onclick="switchTab('tab-history')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-gray-400 border-b-2 border-transparent hover:bg-gray-800 transition-colors">HISTORY</button>
+                <button id="btn-tab-users" onclick="switchTab('tab-users')" class="tab-btn flex-1 py-4 text-sm font-bold tracking-wider text-gray-400 border-b-2 border-transparent hover:bg-gray-800 transition-colors">USERS</button>
             </div>
 
             <div class="flex-1 overflow-y-auto relative bg-gray-900 p-4">
@@ -96,30 +127,80 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // GLOBAL DATA REGISTRIES (For the Modals)
+        window.historyRegistry = {};
+        window.usersRegistry = {};
 
         // LOGIN LOGIC
         const ADMIN_PIN = "1234"; 
-
         window.checkPin = function() {
-            const pin = document.getElementById('adminPinInput').value;
-            if(pin === ADMIN_PIN) {
+            if(document.getElementById('adminPinInput').value === ADMIN_PIN) {
                 document.getElementById('loginOverlay').classList.add('hidden');
-            } else {
-                document.getElementById('pinError').classList.remove('hidden');
-            }
+            } else { document.getElementById('pinError').classList.remove('hidden'); }
         };
-
         window.logoutAdmin = function() {
             document.getElementById('adminPinInput').value = "";
             document.getElementById('pinError').classList.add('hidden');
             document.getElementById('loginOverlay').classList.remove('hidden');
         };
+        document.getElementById("adminPinInput").addEventListener("keypress", e => { if (e.key === "Enter") checkPin(); });
 
-        document.getElementById("adminPinInput").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") checkPin();
-        });
+        // CUSTOM CONFIRMATION LOGIC
+        window.showConfirm = function(title, message, onConfirmCallback) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            document.getElementById('confirmBtn').onclick = () => {
+                onConfirmCallback();
+                closeConfirm();
+            };
+            document.getElementById('confirmModal').classList.remove('hidden');
+        };
+        window.closeConfirm = function() { document.getElementById('confirmModal').classList.add('hidden'); };
+
+        // MODAL CONTROLLERS
+        window.openImageModal = function(base64Data) {
+            document.getElementById('modalImage').src = "data:image/jpeg;base64," + base64Data;
+            document.getElementById('imageModal').classList.remove('hidden');
+        };
+        window.closeImageModal = function() {
+            document.getElementById('imageModal').classList.add('hidden');
+            setTimeout(() => { document.getElementById('modalImage').src = ""; }, 300); 
+        };
+        document.addEventListener('keydown', e => { if (e.key === "Escape") { closeImageModal(); closeReportModal(); closeUserModal(); closeConfirm(); } });
+
+        // REPORT & USER MODALS
+        window.closeReportModal = function() { document.getElementById('reportModal').classList.add('hidden'); };
+        window.closeUserModal = function() { document.getElementById('userModal').classList.add('hidden'); };
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-[#E36940]', 'text-[#E36940]');
+                el.classList.add('border-transparent', 'text-gray-400');
+            });
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('border-transparent', 'text-gray-400');
+            activeBtn.classList.add('border-[#E36940]', 'text-[#E36940]');
+        };
+
+        // MAP SETUP
+        const map = L.map('map', { zoomControl: false }).setView([9.59, 125.69], 10);
+        L.control.zoom({ position: 'bottomleft' }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+
+        const iconBaseParams = { shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] };
+        const medicalIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', ...iconBaseParams });
+        const fireIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png', ...iconBaseParams });
+        const policeIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', ...iconBaseParams });
+        const responderIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', ...iconBaseParams });
+
+        const activeMarkers = {};            
+        const activeResponderMarkers = {};   
+        const activePolylines = {};          
 
         // 🚨 API KEY 🚨
         const firebaseConfig = {
@@ -131,59 +212,6 @@
             appId: "1:935534672454:web:11b086134b286a16872847"
         };
 
-        // MODAL CONTROLLERS
-        window.openImageModal = function(base64Data) {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modalImg.src = "data:image/jpeg;base64," + base64Data;
-            modal.classList.remove('hidden');
-        };
-
-        window.closeImageModal = function() {
-            const modal = document.getElementById('imageModal');
-            const modalImg = document.getElementById('modalImage');
-            modal.classList.add('hidden');
-            setTimeout(() => { modalImg.src = ""; }, 300); 
-        };
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Escape") closeImageModal();
-        });
-
-
-        window.switchTab = function(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('border-[#E36940]', 'text-[#E36940]');
-                el.classList.add('border-transparent', 'text-gray-400');
-            });
-
-            document.getElementById(tabId).classList.remove('hidden');
-            const activeBtn = document.getElementById('btn-' + tabId);
-            activeBtn.classList.remove('border-transparent', 'text-gray-400');
-            activeBtn.classList.add('border-[#E36940]', 'text-[#E36940]');
-        };
-
-        const map = L.map('map', { zoomControl: false }).setView([9.59, 125.69], 10);
-        L.control.zoom({ position: 'bottomleft' }).addTo(map);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        const shadowUrl = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png';
-        const iconBaseParams = { shadowUrl: shadowUrl, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] };
-        
-        const medicalIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', ...iconBaseParams });
-        const fireIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png', ...iconBaseParams });
-        const policeIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', ...iconBaseParams });
-        
-        const responderIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png', ...iconBaseParams });
-
-        const activeMarkers = {};            
-        const activeResponderMarkers = {};   
-        const activePolylines = {};          
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -191,37 +219,131 @@
         signInAnonymously(auth).then(() => {
             const statusEl = document.getElementById('connection-status');
             statusEl.innerHTML = '<span class="text-[#40BAE3]">● Securely Connected</span>';
-            
-            setTimeout(() => {
-                statusEl.classList.add('fade-out');
-                setTimeout(() => statusEl.style.display = 'none', 500);
-            }, 2000);
+            setTimeout(() => { statusEl.classList.add('fade-out'); setTimeout(() => statusEl.style.display = 'none', 500); }, 2000);
 
-            // ==========================================
-            // NEW: DISPATCH & DISMISS (PRANK) LOGIC
-            // ==========================================
+            // ADMIN FUNCTIONS
             window.dispatchUnit = async function(documentId) {
-                try {
-                    const emergencyRef = doc(db, "emergencies", documentId);
-                    await updateDoc(emergencyRef, { status: "Dispatched" });
-                } catch (error) { console.error("Error dispatching: ", error); }
+                try { await updateDoc(doc(db, "emergencies", documentId), { status: "Dispatched" }); } 
+                catch (error) { console.error("Error dispatching: ", error); }
             };
 
             window.dismissUnit = async function(documentId) {
-                try {
-                    // Instantly marks it resolved so it clears off the live map
-                    const emergencyRef = doc(db, "emergencies", documentId);
-                    await updateDoc(emergencyRef, { status: "Resolved", notes: "❌ DISMISSED / VERIFIED AS PRANK" });
-                } catch (error) { console.error("Error dismissing: ", error); }
+                try { await updateDoc(doc(db, "emergencies", documentId), { status: "Resolved", notes: "❌ DISMISSED / VERIFIED AS PRANK" }); } 
+                catch (error) { console.error("Error dismissing: ", error); }
+            };
+
+            window.deleteHistoryRecord = function(documentId) {
+                showConfirm("DELETE RECORD", "This will permanently erase this SOS ticket from the database. This action cannot be undone.", async () => {
+                    try { 
+                        await deleteDoc(doc(db, "emergencies", documentId)); 
+                        closeReportModal();
+                    } catch (error) { console.error("Error deleting: ", error); }
+                });
+            };
+
+            window.deleteUserRecord = function(documentId) {
+                showConfirm("DELETE CITIZEN", "This will permanently delete this citizen's profile from the database.", async () => {
+                    try { 
+                        await deleteDoc(doc(db, "users", documentId)); 
+                        closeUserModal();
+                    } catch (error) { console.error("Error deleting user: ", error); }
+                });
+            };
+
+            window.banUserRecord = function(documentId, isCurrentlyBanned) {
+                let actionStr = isCurrentlyBanned ? "UNBAN" : "BAN";
+                showConfirm(actionStr + " CITIZEN", `Are you sure you want to ${actionStr} this user?`, async () => {
+                    try { 
+                        await updateDoc(doc(db, "users", documentId), { account_status: isCurrentlyBanned ? "Active" : "Banned" }); 
+                        closeUserModal();
+                    } catch (error) { console.error("Error updating user status: ", error); }
+                });
+            };
+
+            // MODAL POPULATORS
+            window.viewHistoryReport = function(id) {
+                const data = window.historyRegistry[id];
+                const dateObj = new Date(parseInt(data.timestamp));
+                let formattedNotes = data.notes ? data.notes.replace(/\\n/g, '<br>').replace(/\n/g, '<br>') : "No CAD data provided.";
+                
+                let imgHtml = data.image_data && data.image_data.length > 20 
+                    ? `<div class="mt-4"><p class="text-xs text-gray-500 mb-1">SCENE EVIDENCE:</p><img src="data:image/jpeg;base64,${data.image_data}" class="w-full rounded border border-gray-600"></div>` 
+                    : '';
+
+                document.getElementById('reportModalContent').innerHTML = `
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                            <p class="text-[10px] text-gray-500 uppercase">Emergency Type</p>
+                            <p class="font-bold text-white tracking-widest">${data.type}</p>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                            <p class="text-[10px] text-gray-500 uppercase">Final Status</p>
+                            <p class="font-bold ${data.status === 'Resolved' ? 'text-green-400' : 'text-red-400'} tracking-widest">${data.status.toUpperCase()}</p>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                            <p class="text-[10px] text-gray-500 uppercase">Date & Time</p>
+                            <p class="font-bold text-gray-300">${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString()}</p>
+                        </div>
+                        <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                            <p class="text-[10px] text-gray-500 uppercase">Citizen / Caller</p>
+                            <p class="font-bold text-[#83D2ED] truncate">${data.citizen_id}</p>
+                        </div>
+                    </div>
+                    <div class="bg-[#0f172a] border border-gray-700 rounded p-4">
+                        <p class="text-[10px] text-gray-500 uppercase mb-2">CAD Terminal Log</p>
+                        <div class="text-xs font-mono text-gray-300 leading-relaxed">${formattedNotes}</div>
+                        ${imgHtml}
+                    </div>
+                    <button onclick="deleteHistoryRecord('${id}')" class="w-full mt-4 bg-red-900/50 hover:bg-red-600 text-red-300 hover:text-white border border-red-800 py-3 rounded font-bold tracking-widest transition-colors">
+                        🗑️ PERMANENTLY DELETE RECORD
+                    </button>
+                `;
+                document.getElementById('reportModal').classList.remove('hidden');
+            };
+
+            window.viewUserProfile = function(id) {
+                const user = window.usersRegistry[id];
+                const isBanned = user.account_status === "Banned";
+                
+                let detailsHtml = '';
+                // Dynamically list all known user fields so it automatically adapts if the app sends more
+                for (const [key, value] of Object.entries(user)) {
+                    if(key !== 'password' && key !== 'account_status') {
+                        detailsHtml += `
+                            <div class="flex flex-col bg-gray-800 p-3 rounded border border-gray-700">
+                                <span class="text-[10px] text-gray-500 uppercase tracking-widest">${key.replace('_', ' ')}</span>
+                                <span class="font-bold text-white mt-1">${value || 'N/A'}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                document.getElementById('userModalContent').innerHTML = `
+                    ${isBanned ? `<div class="bg-red-600 text-white text-center text-xs font-bold py-2 rounded mb-4 tracking-widest">🚨 THIS ACCOUNT IS BANNED 🚨</div>` : ''}
+                    <div class="space-y-3">
+                        ${detailsHtml}
+                    </div>
+                `;
+
+                document.getElementById('userModalActions').innerHTML = `
+                    <button onclick="deleteUserRecord('${id}')" class="text-red-400 hover:text-red-300 text-xs font-bold tracking-widest px-4">DELETE USER</button>
+                    <div class="flex gap-2">
+                        <button onclick="banUserRecord('${id}', ${isBanned})" class="${isBanned ? 'bg-green-600 hover:bg-green-500' : 'bg-[#E36940] hover:bg-orange-500'} px-6 py-2 rounded text-white text-sm font-bold tracking-widest shadow">
+                            ${isBanned ? 'UNBAN ACCOUNT' : 'BAN ACCOUNT'}
+                        </button>
+                    </div>
+                `;
+                document.getElementById('userModal').classList.remove('hidden');
             };
 
             const alertSound = document.getElementById('alertSound');
-            
             const emergenciesRef = collection(db, "emergencies");
+            
+            // EMERGENCY LISTENER
             onSnapshot(emergenciesRef, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     if (change.type === "added" && change.doc.data().status === "Pending") {
-                        alertSound.play().catch(e => console.log("Click page to allow sound."));
+                        alertSound.play().catch(e => console.log("Sound blocked."));
                         window.switchTab('tab-live');
                     }
                 });
@@ -232,7 +354,8 @@
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     const id = doc.id;
-                    
+                    window.historyRegistry[id] = data; // Save to global registry for Modal
+
                     let badgeColor = data.type === 'Medical' ? 'bg-blue-600' : (data.type === 'Fire' ? 'bg-orange-600' : 'bg-red-600');
                     let hexColor = data.type === 'Medical' ? '#2563eb' : (data.type === 'Fire' ? '#ea580c' : '#dc2626');
                     let pinIcon = data.type === 'Medical' ? medicalIcon : (data.type === 'Fire' ? fireIcon : policeIcon);
@@ -242,90 +365,55 @@
 
                         if (data.lat && data.lng) {
                             if (!activeMarkers[id]) {
-                                const marker = L.marker([data.lat, data.lng], { icon: pinIcon }).addTo(map)
-                                    .bindPopup(`<b style="color:${hexColor}">${data.type.toUpperCase()} EMERGENCY</b><br>${data.citizen_id}`);
-                                activeMarkers[id] = marker;
+                                activeMarkers[id] = L.marker([data.lat, data.lng], { icon: pinIcon }).addTo(map).bindPopup(`<b style="color:${hexColor}">${data.type.toUpperCase()} EMERGENCY</b><br>${data.citizen_id}`);
                                 map.setView([data.lat, data.lng], 13);
                             }
                         }
 
                         if (data.status === "En Route" && data.responder_lat && data.responder_lng) {
                             if (!activeResponderMarkers[id]) {
-                                const rMarker = L.marker([data.responder_lat, data.responder_lng], { icon: responderIcon }).addTo(map)
-                                    .bindPopup(`<b style="color:#16A34A">RESPONDER UNIT</b><br>Live GPS Active`);
-                                activeResponderMarkers[id] = rMarker;
-                            } else {
-                                activeResponderMarkers[id].setLatLng([data.responder_lat, data.responder_lng]);
-                            }
+                                activeResponderMarkers[id] = L.marker([data.responder_lat, data.responder_lng], { icon: responderIcon }).addTo(map).bindPopup(`<b style="color:#16A34A">RESPONDER UNIT</b><br>Live GPS Active`);
+                            } else { activeResponderMarkers[id].setLatLng([data.responder_lat, data.responder_lng]); }
 
                             const lineCoords = [[data.lat, data.lng], [data.responder_lat, data.responder_lng]];
                             if (!activePolylines[id]) {
-                                activePolylines[id] = L.polyline(lineCoords, {
-                                    color: '#16A34A', weight: 3, dashArray: '10, 10', className: 'dash-line'
-                                }).addTo(map);
+                                activePolylines[id] = L.polyline(lineCoords, { color: '#16A34A', weight: 3, dashArray: '10, 10', className: 'dash-line' }).addTo(map);
                             } else { activePolylines[id].setLatLngs(lineCoords); }
                         }
 
-                        // ==========================================
-                        // NEW: CAD DATA PARSER & SILENT MODE
-                        // ==========================================
                         let imageHtmlBlock = '';
                         if (data.image_data && data.image_data.length > 20) {
                             imageHtmlBlock = `
                                 <div class="mt-3 border border-gray-700 rounded overflow-hidden">
-                                    <img src="data:image/jpeg;base64,${data.image_data}" alt="Scene Photo" 
-                                         class="w-full h-40 object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                         onclick="openImageModal('${data.image_data}')" title="Click to expand image">
+                                    <img src="data:image/jpeg;base64,${data.image_data}" alt="Scene Photo" class="w-full h-40 object-cover cursor-pointer hover:opacity-80 transition-opacity" onclick="openImageModal('${data.image_data}')" title="Click to expand image">
                                 </div>
                             `;
                         }
 
-                        // Check if it's a silent emergency and extract the mobile number
                         let isSilent = false;
                         let cadDataHtml = '';
                         let extractedMobile = ''; 
 
                         if (data.notes) {
                             isSilent = data.notes.includes("SILENT EMERGENCY");
-                            
-                            // MAGIC EXTRACTOR: Pulls ONLY the mobile number up to the first newline
                             let mobileMatch = data.notes.match(/CONTACT:\s*(.*?)(?:\\n|\n|<br>|$)/i);
-                            if (mobileMatch && mobileMatch[1]) {
-                                extractedMobile = mobileMatch[1].trim();
-                            }
-
-                            // Format the raw data strings from Java \\n into HTML line breaks <br>
+                            if (mobileMatch && mobileMatch[1]) extractedMobile = mobileMatch[1].trim();
                             let formattedData = data.notes.replace(/\\n/g, '<br>').replace(/\n/g, '<br>');
-                            
-                            // Remove the small contact line from the gray box since we are displaying it massively above
                             formattedData = formattedData.replace(/CONTACT:.*?<br>/i, '');
                             
-                            // RESTORED: The Gray Terminal Box for the remaining triage data
-                            cadDataHtml = `
-                                <div class="mt-3 bg-gray-800 border border-gray-600 rounded p-3 text-[11px] font-mono text-gray-300 leading-relaxed overflow-y-auto max-h-48 shadow-inner">
-                                    ${formattedData}
-                                </div>
-                            `;
+                            cadDataHtml = `<div class="mt-3 bg-gray-800 border border-gray-600 rounded p-3 text-[11px] font-mono text-gray-300 leading-relaxed overflow-y-auto max-h-48 shadow-inner">${formattedData}</div>`;
                         }
 
-                        let silentBanner = isSilent 
-                            ? `<div class="bg-red-600 text-white text-[11px] font-bold px-2 py-2 rounded mb-3 animate-pulse text-center tracking-widest border border-red-400 shadow-md">🚨 DO NOT CALL - SILENT EMERGENCY 🚨</div>`
-                            : '';
-
-                        // NEW: BIG MOBILE NUMBER BLOCK
-                        let numberColor = isSilent ? "text-red-500 opacity-50" : "text-[#40BAE3]";
-                        let callLabel = isSilent ? "🚨 DO NOT CALL THIS NUMBER" : "📞 CALL CITIZEN";
+                        let silentBanner = isSilent ? `<div class="bg-red-600 text-white text-[11px] font-bold px-2 py-2 rounded mb-3 animate-pulse text-center tracking-widest border border-red-400 shadow-md">🚨 DO NOT CALL - SILENT EMERGENCY 🚨</div>` : '';
                         let mobileDisplayBlock = extractedMobile && extractedMobile !== "N/A"
                             ? `<div class="mt-3 bg-[#0B1120] border border-gray-700 rounded-md p-3 text-center shadow-lg">
-                                 <div class="text-[10px] ${isSilent ? 'text-red-500' : 'text-gray-400'} font-bold uppercase tracking-widest">${callLabel}</div>
-                                 <div class="text-3xl font-black ${numberColor} tracking-widest mt-1 select-all cursor-pointer" title="Double click to copy">${extractedMobile}</div>
-                               </div>`
-                            : '';
+                                 <div class="text-[10px] ${isSilent ? 'text-red-500' : 'text-gray-400'} font-bold uppercase tracking-widest">${isSilent ? "🚨 DO NOT CALL THIS NUMBER" : "📞 CALL CITIZEN"}</div>
+                                 <div class="text-3xl font-black ${isSilent ? 'text-red-500 opacity-50' : 'text-[#40BAE3]'} tracking-widest mt-1 select-all cursor-pointer" title="Double click to copy">${extractedMobile}</div>
+                               </div>` : '';
 
                         let statusColor = data.status === 'Pending' ? 'text-red-400 animate-pulse' : (data.status === 'En Route' ? 'text-[#40BAE3]' : 'text-green-400');
                         let rowBorder = data.status === 'Pending' ? 'blinking-border border-2' : 'border border-gray-700';
                         
-                        // NEW: Dual-Button Triage System
                         let actionButtons = '';
                         if (data.status === 'Pending') {
                             actionButtons = `
@@ -344,11 +432,7 @@
                                     <span class="text-[11px] text-[#ED9D83] font-medium">${timeString}</span>
                                 </div>
                                 <p class="text-sm font-semibold text-gray-200">Caller: <span class="text-[#83D2ED]">${data.citizen_id}</span></p>
-                                
-                                ${mobileDisplayBlock} <!-- NEW: BIG NUMBER -->
-                                ${cadDataHtml} <!-- RESTORED: THE RICH DATA TERMINAL BOX -->
-                                ${imageHtmlBlock} 
-
+                                ${mobileDisplayBlock} ${cadDataHtml} ${imageHtmlBlock} 
                                 <div class="flex flex-col mt-4 border-t border-gray-700 pt-3">
                                     <span class="text-xs font-extrabold ${statusColor} tracking-wider">STATUS: ${data.status.toUpperCase()}</span>
                                     ${actionButtons}
@@ -359,68 +443,63 @@
                         if (activeMarkers[id]) { map.removeLayer(activeMarkers[id]); delete activeMarkers[id]; }
                         if (activeResponderMarkers[id]) { map.removeLayer(activeResponderMarkers[id]); delete activeResponderMarkers[id]; }
                         if (activePolylines[id]) { map.removeLayer(activePolylines[id]); delete activePolylines[id]; }
-
-                        historyArray.push(data);
+                        historyArray.push({ id, ...data });
                     }
                 });
 
                 document.getElementById('tab-live').innerHTML = liveHTML || `<p class="text-center text-gray-500 mt-10 text-sm">No active emergencies.</p>`;
 
                 historyArray.sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
-
                 let historyHTML = '';
                 historyArray.forEach(data => {
                     const dateObj = new Date(parseInt(data.timestamp));
-                    const dateString = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
-                    const timeString = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                     let hexColor = data.type === 'Medical' ? '#2563eb' : (data.type === 'Fire' ? '#ea580c' : '#dc2626');
-
-                    // Allow history tab to show if it was dismissed as a prank
                     let isDismissed = data.notes && data.notes.includes("DISMISSED");
-                    let historyStatus = isDismissed ? `<span class="text-[9px] text-red-500 font-bold tracking-widest block mt-1">LOGGED AS PRANK</span>` : '';
 
                     historyHTML += `
-                        <div class="bg-[#111827] border-l-4 rounded-r-md p-3 flex justify-between items-center mb-2 shadow-sm border border-gray-800" style="border-left-color: ${hexColor}">
-                            <div>
-                                <span style="color: ${hexColor}" class="text-xs font-bold uppercase tracking-wider mr-2">${data.type}</span>
-                                <div class="text-[11px] text-gray-400 mt-1">${data.citizen_id}</div>
-                                ${historyStatus}
+                        <div class="bg-[#111827] border-l-4 rounded-r-md p-3 flex flex-col mb-2 shadow-sm border border-gray-800" style="border-left-color: ${hexColor}">
+                            <div class="flex justify-between items-start w-full">
+                                <div>
+                                    <span style="color: ${hexColor}" class="text-xs font-bold uppercase tracking-wider mr-2">${data.type}</span>
+                                    <div class="text-[11px] text-gray-400 mt-1">${data.citizen_id}</div>
+                                    ${isDismissed ? `<span class="text-[9px] text-red-500 font-bold tracking-widest block mt-1">LOGGED AS PRANK</span>` : ''}
+                                </div>
+                                <div class="flex flex-col items-end">
+                                    <span class="text-[10px] text-gray-500 font-bold tracking-widest uppercase mb-1">${dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })}</span>
+                                    <span class="text-xs text-[#ED9D83] font-medium">${dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                </div>
                             </div>
-                            <div class="flex flex-col items-end">
-                                <span class="text-[10px] text-gray-500 font-bold tracking-widest uppercase mb-1">${dateString}</span>
-                                <span class="text-xs text-[#ED9D83] font-medium">${timeString}</span>
-                            </div>
+                            <button onclick="viewHistoryReport('${data.id}')" class="mt-3 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold py-2 rounded tracking-widest transition-colors border border-gray-600">VIEW FULL REPORT</button>
                         </div>
                     `;
                 });
-
                 document.getElementById('tab-history').innerHTML = historyHTML || `<p class="text-center text-gray-500 mt-10 text-sm">History log is empty.</p>`;
             });
 
+            // USERS LISTENER
             const usersRef = collection(db, "users");
             onSnapshot(usersRef, (snapshot) => {
                 const usersTab = document.getElementById('tab-users');
                 usersTab.innerHTML = ''; 
-                
                 if (snapshot.empty) {
-                    usersTab.innerHTML = `
-                        <div class="text-center mt-10 p-6 border border-dashed border-[#1B93BB] rounded-lg">
-                            <p class="text-[#83D2ED] font-semibold mb-2">No Users Found</p>
-                            <p class="text-sm text-gray-400">Registered citizens will appear here.</p>
-                        </div>
-                    `;
-                    return;
+                    usersTab.innerHTML = `<div class="text-center mt-10 p-6 border border-dashed border-[#1B93BB] rounded-lg"><p class="text-[#83D2ED] font-semibold mb-2">No Users Found</p></div>`; return;
                 }
-
                 snapshot.forEach((doc) => {
                     const userData = doc.data();
+                    const id = doc.id;
+                    window.usersRegistry[id] = userData;
+                    const isBanned = userData.account_status === "Banned";
+
                     usersTab.innerHTML += `
-                        <div class="bg-[#111827] border border-gray-700 rounded-lg p-3 flex justify-between items-center shadow-sm mb-2">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold text-[#83D2ED] tracking-wide">${userData.name || 'Unknown User'}</span>
-                                <span class="text-xs text-gray-400 mt-1">${userData.email || 'No email provided'}</span>
+                        <div class="bg-[#111827] border ${isBanned ? 'border-red-800' : 'border-gray-700'} rounded-lg p-3 flex flex-col shadow-sm mb-2">
+                            <div class="flex justify-between items-center w-full">
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-bold ${isBanned ? 'text-red-500 line-through' : 'text-[#83D2ED]'} tracking-wide">${userData.name || 'Unknown User'}</span>
+                                    <span class="text-xs text-gray-400 mt-1">${userData.email || 'No email provided'}</span>
+                                </div>
+                                <span class="text-[10px] ${isBanned ? 'bg-red-900 text-red-300' : 'bg-[#1B93BB] text-white'} px-2 py-1 rounded uppercase tracking-widest font-bold">${isBanned ? 'BANNED' : 'Verified'}</span>
                             </div>
-                            <span class="text-[10px] bg-[#1B93BB] text-white px-2 py-1 rounded uppercase tracking-widest font-bold">Verified</span>
+                            <button onclick="viewUserProfile('${id}')" class="mt-3 w-full bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold py-2 rounded tracking-widest transition-colors border ${isBanned ? 'border-red-800' : 'border-gray-600'}">MANAGE PROFILE</button>
                         </div>
                     `;
                 });
